@@ -278,7 +278,7 @@ useEffect(() => {
         <div style={styles.overlay} id="pdf-download-btn">
           <div style={styles.paymentBox}>
             <h2>Ödəniş olunduqdan sonra PDF yükləyə bilərsiniz</h2>
-            <p style={{ fontSize: '24px', fontWeight: 'bold' }}>4 AZN</p>
+            <p style={{ fontSize: '24px', fontWeight: 'bold' }}>2 AZN</p>
             <p style={{ fontSize: '18px' }}>5522 0993 6030 7078</p>
             <a
               href="https://wa.me/994515972371"
