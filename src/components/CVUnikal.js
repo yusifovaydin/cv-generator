@@ -1,6 +1,8 @@
 // src/components/CVUnikal.js
 import React, { useEffect, useState } from 'react';
 import html2pdf from 'html2pdf.js';
+import { supabase } from './supabaseClient';
+
 
 const CVUnikal = () => {
   const [data, setData] = useState({});
@@ -8,19 +10,33 @@ const CVUnikal = () => {
   const [userId, setUserId] = useState(null);
 
   useEffect(() => {
-    const id = localStorage.getItem('userId');
-    const savedData = localStorage.getItem('cvData');
-    if (savedData) {
-      setData(JSON.parse(savedData));
-    }
-    if (id) {
-      setUserId(id);
-      const confirmed = localStorage.getItem(`paymentConfirmed_${id}`);
-      if (confirmed === 'true') {
-        setPaymentConfirmed(true);
+  const uid = new URLSearchParams(window.location.search).get('uid');
+  const savedData = localStorage.getItem('cvData');
+
+      if (savedData) {
+        setData(JSON.parse(savedData));
       }
-    }
-  }, []);
+
+      if (uid) {
+        setUserId(uid);
+
+        const checkPayment = async () => {
+          const { data: req, error } = await supabase
+            .from('cv_requests')
+            .select('payment_confirmed')
+            .eq('user_id', uid)
+            .single();
+
+          if (error) {
+            console.error('Ödəniş statusu alınmadı:', error.message);
+          } else if (req?.payment_confirmed) {
+            setPaymentConfirmed(true);
+          }
+        };
+
+        checkPayment();
+      }
+    }, []); // ← BU hissə çatışmır səndə!
 
   const downloadPDF = () => {
     const element = document.getElementById('unikal-cv-wrapper');

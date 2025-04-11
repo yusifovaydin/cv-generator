@@ -1,6 +1,7 @@
 // src/components/CVASG.js
 import React, { useEffect, useState } from 'react';
 import html2pdf from 'html2pdf.js';
+import { supabase } from './supabaseClient';
 
 const selectedCV = localStorage.getItem('selectedCV');
 
@@ -8,36 +9,54 @@ const CVPreview = () => {
   const [data, setData] = useState({});
   const [userId, setUserId] = useState(null);
   const [paymentConfirmed, setPaymentConfirmed] = useState(false);
+  const [loading, setLoading] = useState(true); 
 
-  useEffect(() => {
-    const id = localStorage.getItem('userId');
-    const savedData = localStorage.getItem('cvData');
+  // CVASG.js və ya CVUnikal.js daxilində
 
-    if (savedData) {
-      setData(JSON.parse(savedData));
-    }
+useEffect(() => {
+  const uid = new URLSearchParams(window.location.search).get('uid');
+  const cleanedUid = uid?.trim(); // whitespace-ləri sil
+  console.log("Təmiz UID:", cleanedUid);
+  const stringUid = String(uid);
+  console.log("Gələn UID:", uid); // UID yoxlaması
 
-    if (id) {
-      setUserId(id);
+  const savedData = localStorage.getItem('cvData');
 
-      const confirmed = localStorage.getItem(`paymentConfirmed_${id}`);
-      if (confirmed === 'true') {
+  if (savedData) {
+    setData(JSON.parse(savedData));
+  }
+
+  if (uid) {
+    setUserId(uid);
+    
+
+    const checkPayment = async () => {
+    const { data, error } = await supabase
+      .from('cv_requests')
+      .select('payment_confirmed')
+      .eq('user_id', cleanedUid)
+      .single();
+
+    if (error) {
+      console.error('Ödəniş statusu alınmadı:', error.message);
+    } else {
+      console.log("Supabase cavabı:", data); // burada artıq `data` obyektidir
+      if (data?.payment_confirmed === true || data?.payment_confirmed === 'true' || data?.payment_confirmed === 1) {
         setPaymentConfirmed(true);
+        console.log("Ödəniş təsdiqləndi ✅");
+      } else {
+        console.log("Ödəniş hələ təsdiqlənməyib ❌");
       }
     }
 
-    const handleStorageChange = (e) => {
-      if (e.key === `paymentConfirmed_${id}` && e.newValue === 'true') {
-        setPaymentConfirmed(true);
-      }
-    };
+    setLoading(false);
+  };
 
-    window.addEventListener('storage', handleStorageChange);
 
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [userId]); // Added userId to the dependency array
+    checkPayment();
+  }
+}, []);
+
 
   const downloadPDF = () => {
   const element = document.getElementById('cv-pdf-only');
@@ -74,6 +93,9 @@ const CVPreview = () => {
       <td style={styles.value}>{value || ''}</td>
     </tr>
   );
+    if (loading) {
+      return <p style={{ textAlign: 'center', marginTop: '100px' }}>Yüklənir...</p>;
+    }
 
   return (
     <div style={{ position: 'relative' }} id="cv-pdf-only">
@@ -221,7 +243,7 @@ const CVPreview = () => {
                 TƏLİMLƏR / TRAININGS
               </td>
             </tr>
-                        {Array.isArray(data.trainings) && data.trainings.length > 0 ? (
+              {Array.isArray(data.trainings) && data.trainings.length > 0 ? (
               data.trainings.map((training, index) => (
                 <React.Fragment key={index}>
                   {renderRow('Təlimin adı / Training name:', training.name)}
@@ -237,8 +259,6 @@ const CVPreview = () => {
             ) : (
               renderRow('Son təlimlər:', '')
             )}
-
-
             <tr>
               <td colSpan="2" style={styles.section}>
                 DİGƏR BACARIQLAR / OTHER SKILLS

@@ -7,6 +7,8 @@ import CVSelector from './components/CVSelector';
 import Loading from './components/Loading';
 import CVUnikal from './components/CVUnikal';
 import CVASG from './components/CVASG';
+import PaymentTest from './components/PaymentTest';
+import FetchTest from './components/FetchTest';
 
 function App() {
   return (
@@ -18,6 +20,8 @@ function App() {
         <Route path="/admin" element={<AdminPanel/>} />
         <Route path="/loading" element={<Loading/>} />
         <Route path="/preview-unikal" element={<CVUnikal/>} />
+        <Route path="/payment-test" element={<PaymentTest />} />
+        <Route path="/fetch-test" element={<FetchTest />} />
       </Routes>
     </Router>
   );

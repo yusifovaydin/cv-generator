@@ -1,25 +1,50 @@
 // src/components/AdminPanel.js
 import React, { useEffect, useState } from 'react';
+import { supabase } from './supabaseClient';
 
 const AdminPanel = () => {
   const [requests, setRequests] = useState([]);
 
-  useEffect(() => {
-    const savedRequests = JSON.parse(localStorage.getItem('cvRequests')) || [];
-    setRequests(savedRequests);
-  }, []);
+useEffect(() => {
+  const fetchRequests = async () => {
+    const { data, error } = await supabase
+      .from('cv_requests')
+      .select('*')
+      .order('created_at', { ascending: false });
 
-  const handleConfirm = (userId) => {
-    localStorage.setItem(`paymentConfirmed_${userId}`, 'true');
-    alert(`Təsdiqləndi: ${userId}`);
-    setRequests(prev => prev.filter(r => r.userId !== userId));
-    localStorage.setItem('cvRequests', JSON.stringify(requests.filter(r => r.userId !== userId)));
+    if (error) {
+      console.error('Supabase fetch error:', error.message);
+    } else {
+      console.log("Supabase data:", data); // test üçün
+      setRequests(data); // test üçün filter etmə
+    }
   };
 
-  const handleReject = (userId) => {
+  fetchRequests();
+}, []);
+
+  const handleConfirm = async (userId) => {
+    const { error } = await supabase
+      .from('cv_requests')
+      .update({ payment_confirmed: true })
+      .eq('user_id', userId.toString());
+
+    if (error) {
+      alert('Təsdiqləmə zamanı xəta baş verdi');
+      console.error(error);
+    } else {
+      alert(`Təsdiqləndi: ${userId}`);
+      setRequests(prev => prev.filter(r => r.user_id !== userId));
+    }
+  };
+
+  const handleReject = async (userId) => {
     alert(`Rədd edildi: ${userId}`);
-    setRequests(prev => prev.filter(r => r.userId !== userId));
-    localStorage.setItem('cvRequests', JSON.stringify(requests.filter(r => r.userId !== userId)));
+
+    // Opsional: Supabase-dən silmək istəsən aşağısını aç
+    // await supabase.from('cv_requests').delete().eq('user_id', userId);
+
+    setRequests((prev) => prev.filter((r) => r.user_id !== userId));
   };
 
   return (
@@ -39,13 +64,13 @@ const AdminPanel = () => {
           </thead>
           <tbody>
             {requests.map((req, index) => (
-              <tr key={req.userId}>
+              <tr key={req.user_id}>
                 <td>{index + 1}</td>
                 <td>{req.fullname} {req.fathername}</td>
-                <td>{req.createdAt}</td>
+                <td>{new Date(req.created_at).toLocaleString()}</td>
                 <td>
-                  <button onClick={() => handleConfirm(req.userId)} style={styles.confirm}>Təsdiq et</button>
-                  <button onClick={() => handleReject(req.userId)} style={styles.reject}>✖</button>
+                  <button onClick={() => handleConfirm(req.user_id)} style={styles.confirm}>Təsdiq et</button>
+                  <button onClick={() => handleReject(req.user_id)} style={styles.reject}>✖</button>
                 </td>
               </tr>
             ))}

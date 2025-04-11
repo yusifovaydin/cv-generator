@@ -1,6 +1,7 @@
 // src/components/CVForm.js
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from './supabaseClient';
 
 
 const CVForm = () => {
@@ -137,12 +138,50 @@ const CVForm = () => {
     };
     localStorage.setItem('cvRequests', JSON.stringify([...existingRequests, newRequest]));
 
+    try {
+      const { error } = await supabase.from('cv_requests').insert([
+        {
+          user_id: userId.toString(),
+          fullname: formData.fullname,
+          fathername: formData.fathername,
+          created_at: new Date().toISOString(),
+          payment_confirmed: false 
+        }
+      ]);
+
+      if (error) {
+        console.error('Supabase insert error:', error.message);
+      } else {
+        console.log('Məlumat uğurla Supabase-ə əlavə olundu');
+      }
+    } catch (err) {
+      console.error('Supabase bağlantı xətası:', err.message);
+    }
+
+        // CV detallarını Supabase-ə əlavə et
+    await supabase.from('cv_details').insert([
+      {
+        user_id: userId.toString(),
+        photo: updatedData.photo || '',
+        email: updatedData.email || '',
+        phone: updatedData.phone || '',
+        address: updatedData.address || '',
+        education: educationList, // array of education objects
+        school: schoolList, // array of school objects
+        languages: languageList, // array of language objects
+        experience: experienceList, // array of experience objects
+        trainings: updatedData.trainings || '',
+        skills: updatedData.skills || '',
+        itskills: updatedData.itskills || ''
+      }
+    ]);
+
     const selectedCV = localStorage.getItem('selectedCV');
 
     if (selectedCV === 'asg') {
-      navigate('/asg');
+      navigate(`/asg?uid=${userId}`);
     } else if (selectedCV === 'unikal') {
-      navigate('/preview-unikal');
+      navigate(`/preview-unikal?uid=${userId}`);
     }
 
   };
